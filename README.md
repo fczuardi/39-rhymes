@@ -10,7 +10,7 @@ A rough roadmap with the planned tasks to complete the demo can be found in this
 
 ### Tech stack
 - [x] HTML / JS
-- [ ] bitconjs' [BIP39](https://github.com/bitcoinjs/bip39)
+- [x] bitconjs' [BIP39](https://github.com/bitcoinjs/bip39)
   - ICS License
 - [ ] [Window AI](https://github.com/alexanderatallah/window.ai)
   - MIT License
