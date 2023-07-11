@@ -9,7 +9,9 @@ This project is a **work in progress** [entry](https://bolt.fun/project/39rhymes
 A rough roadmap with the planned tasks to complete the demo can be found in this [project's board](https://github.com/users/fczuardi/projects/1/views/1?layout=board).
 
 ### Tech stack
-- [x] HTML / JS
+- [x] HTML / TS
+- [x] Tailwind CSS
+  - MIT License
 - [x] bitconjs' [BIP39](https://github.com/bitcoinjs/bip39)
   - ICS License
 - [ ] [Window AI](https://github.com/alexanderatallah/window.ai)
