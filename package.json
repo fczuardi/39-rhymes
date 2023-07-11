@@ -1,0 +1,13 @@
+{
+  "name": "39-rhymes",
+  "version": "0.1.0",
+  "description": "AI powered orange pilled rapper bot",
+  "main": "index.js",
+  "repository": "https://github.com/fczuardi/39-rhymes",
+  "author": "Fabricio C Zuardi",
+  "license": "AGPL3",
+  "private": false,
+  "devDependencies": {
+    "vite": "^4.4.2"
+  }
+}

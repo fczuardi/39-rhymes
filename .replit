@@ -1,0 +1,7 @@
+run = "vite --host 0.0.0.0"
+
+[env]
+PATH = "$REPL_HOME/.config/npm/node_global/bin:$REPL_HOME/node_modules/.bin"
+
+[nix]
+channel = "stable-22_11"
