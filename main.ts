@@ -8,6 +8,7 @@ async function main() {
   const errorSection = document.getElementById("missing-ai-error")
   const promptForm = document.getElementById("prompt-form")
   const resultSection = document.getElementById("result")
+  const debugButton = document.getElementById("debug-button")
   const debugSection = document.getElementById("debug")
 
   //globals
@@ -37,9 +38,11 @@ async function main() {
   }
 
   // Debug
+  debugButton.addEventListener("click", () => {
+    debugSection.classList.toggle("hidden")
+  })
   const printDebug = () => {
     const debugElement = `
-      <h4>Debug</h4>
       <dt>mnemonic</dt>
       <dd><pre>${mnemonic}</pre></dd>
       <dt>hasWindowAi</dt>
