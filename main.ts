@@ -10,6 +10,9 @@ async function main() {
   const resultSection = document.getElementById("result")
   const debugSection = document.getElementById("debug")
 
+  //globals
+  let currentModel = "unknown"
+  let message = ""
 
   // BIP39
 
@@ -34,7 +37,6 @@ async function main() {
   }
 
   // Debug
-  let currentModel = "unknown"
   const printDebug = () => {
     const debugElement = `
       <h4>Debug</h4>
@@ -44,6 +46,8 @@ async function main() {
       <dd>${window.ai !== undefined}</dd>
       <dt>currentModel</dt>
       <dd>${currentModel}</dd>
+      <dt>Prompt</dt>
+      <dd><pre>${message.content}</pre></dd>
     `
 
     debugSection.innerHTML = debugElement
@@ -58,14 +62,15 @@ async function main() {
     return {
       role: "user",
       content: `
-Please make me the first verse of a rap song following this rules:
-1. It must use the words from THE LIST: [${mnemonic}] the order is important.
-2. You cannot use a word from the list more than one time.
-4. Mark each used word with an "*" before and an "*" after. Stop marking words after the last one from THE LIST is used.
-5. The song is about Bitcoin. Please dont use the word "crypto".
+Make me the first verse of a rap song following the rules below:
 
-${songStory.length < 3 ? "" : `Feel free to write a second verse without asterisks and about ${songStory}`}.
-`
+1. It must use the words from this ordered list: [${mnemonic.split(" ").map(i => `"${i}"`).join(", ")}]. 
+2. All words must be used, they must appear in the provided order.
+3. Mark each used word with an "*" before and an "*" after it. Mark each word only once.
+4. Do not mark words that are not part of the list.
+5. The song is about Bitcoin. Avoid the usage of the word "crypto".
+${songStory.length < 3 ? "" : `
+Feel free to write about "${songStory}" even though this is not part of the wordlist.`}`
     }
   }
 
@@ -74,20 +79,25 @@ ${songStory.length < 3 ? "" : `Feel free to write a second verse without asteris
     e.preventDefault()
     resultSection.innerHTML = `<span class="text-indigo-600">thinking...</span>`
     resultSection.classList.remove("hidden")
-    const formData = new FormData(promptForm);
+    const formData = new FormData(promptForm)
     const songTitle = formData.get("title")
+    message = buildPrompt()
 
     const ai = await getWindowAI()
     const {generateText, getCurrentModel} = ai
-    currentModel = await getCurrentModel()
-    const [response] = await generateText({ messages: [buildPrompt()] })
-    resultSection.innerHTML = `
-      <pre class="whitespace-pre-line">
-        # ${songTitle}
+    try {
+      currentModel = await getCurrentModel()
+      const [response] = await generateText({ messages: [message] })
+      resultSection.innerHTML = `
+        <pre class="whitespace-pre-line">
+          # ${songTitle}
 
-        ${response?.message?.content}
-      </pre>`
-    printDebug()
+          ${response?.message?.content}
+        </pre>`
+      printDebug()
+    } catch (e) {
+      resultSection.innerHTML = `<p>Window AI error.</p><dt>Details:</dt><dd>${e}</dd><p>Maybe try changing the model.</p>`
+    }
     mnemonic = generateMnemonic()
   })
 }
