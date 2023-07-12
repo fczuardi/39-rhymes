@@ -7,10 +7,9 @@
   "author": "Fabricio C Zuardi",
   "license": "AGPL3",
   "private": false,
-  "scripts": {
-    "dev:styles": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch"
-  },
   "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.25",
     "tailwindcss": "^3.3.2",
     "vite": "^4.4.2"
   },
