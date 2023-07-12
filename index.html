@@ -1,26 +1,33 @@
 <html>
   <head>
+    <title>39 Rhymes</title>
     <link href="/dist/output.css" rel="stylesheet">
   </head>
   <body>
-    <div id="missing-ai-error"></div>
+    <h1>39 Rhymes</h1>
     <div id="app" class="flex flex-col items-center ">
-      <form id="prompt-form" class="hidden bg-gray-100 text-right p-4 rounded-lg">
+    <div class="w-3/5 mb-4">
+      <p>Howdy! I am a rapper bot living the artificial pleb life, I can serve you some rhymes if you have the <a href="https://windowai.io/">Window AI</a> browser extension installed.</p>
+      <p>I like sparkling some keywords from the <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39</a>'s <a href="https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt">English wordlist</a> on my compositions, I hope you don't mind.</p>
+      <p>Do not use my verses as seed, it is not safe.</p>
+    </div>
+        <form id="prompt-form" class="opacity-50 bg-gray-100 text-right p-4 rounded-lg">
         <label class="block my-4">
           <span class="mr-2">Title of the song</span>
-          <input type="text" name="title" maxlength="50" />
+          <input disabled type="text" name="title" maxlength="50" />
         </label>
         <label class="block my-4">
           What is it about? (optional)
-          <textarea name="story" maxlength="50"></textarea>
+          <textarea disabled name="story" maxlength="50"></textarea>
         </label>
-        <button type="submit" class="font-semibold py-2 px-4 border rounded bg-white border-slate-500 text-slate-500 hover:bg-slate-500 hover:border-transparent hover:text-white">
+        <button disabled type="submit" class="font-semibold py-2 px-4 border rounded bg-white border-slate-500 text-slate-500">
           Start
         </button>
       </form>
-      <div id="result" class="hidden bg-amber-200 p-4 w-1/2">
+      <div id="result" class="bg-amber-200 p-4 w-1/2">
       </div>
     </div>
+    <div id="missing-ai-error" class="hidden p-4 m-4 rounded-lg bg-yellow-100"></div>
     <a class="underline text-gray-400" id="debug-button">debug data</a>
     <div id="debug" class="hidden">
       <span class="bg-gray-100 text-gray-300">initializing...</span>

@@ -1,6 +1,7 @@
 import {generateMnemonic} from "bip39"
 import { Buffer } from 'buffer'
 import {getWindowAI, waitForWindowAI} from "window.ai"
+import {getIntro} from "./introVerses"
 
 
 async function main() {
@@ -13,7 +14,7 @@ async function main() {
 
   //globals
   let currentModel = "unknown"
-  let message = ""
+  let message = {content: ""}
 
   // BIP39
 
@@ -28,14 +29,26 @@ async function main() {
   // check if window.ai is supported
   try {
     await waitForWindowAI();
-    promptForm.classList.remove("hidden")
+    promptForm.classList.remove("opacity-50")
+    promptForm.querySelectorAll("input, textarea, button").forEach(el => {
+      el.removeAttribute("disabled")
+      if (el.nodeName.toLowerCase() === "button") {
+        el.classList.add("hover:bg-slate-500")
+        el.classList.add("hover:border-transparent")
+        el.classList.add("hover:text-white")
+      }
+    })
   } catch (e) {
-    errorSection.className = 'p-4 m-4 rounded-lg bg-yellow-100'
     errorSection.innerHTML = `
       <p>A <strong>window.ai</strong> provider is required to create new rhymes.</p>
       <p>Please install the <a href="https://chrome.google.com/webstore/detail/window-ai/cbhbgmdpcoelfdoihppookkijpmgahag">Window AI extention</a>, or if you have it already, try <a href="/">reloading the page</a></p>
     `
   }
+  promptForm.addEventListener("click", () => {
+    if (promptForm.classList.item(0) === "opacity-50") {
+      errorSection.classList.toggle("hidden")
+    }
+  })
 
   // Debug
   debugButton.addEventListener("click", () => {
@@ -67,11 +80,10 @@ async function main() {
       content: `
 Make me the first verse of a rap song following the rules below:
 
-1. It must use the words from this ordered list: [${mnemonic.split(" ").map(i => `"${i}"`).join(", ")}]. 
-2. All words must be used, they must appear in the provided order.
-3. Mark each used word with an "*" before and an "*" after it. Mark each word only once.
-4. Do not mark words that are not part of the list.
-5. The song is about Bitcoin. The song is not about crypto.
+1. The song is about Bitcoin. The song is not about crypto.
+2. It must use the words from this ordered list: [${mnemonic.split(" ").map(i => `"${i}"`).join(", ")}]. 
+3. All words must be used, they must appear in the provided order.
+4. Mark each used word from the list with an "*" before and an "*" after it. Mark each word only once. Only 12 word should be marked.
 ${songStory.length < 3 ? "" : `
 Feel free to write about "${songStory}" even though this is not part of the wordlist.`}`
     }
@@ -108,6 +120,20 @@ Feel free to write about "${songStory}" even though this is not part of the word
     }
     mnemonic = generateMnemonic()
   })
+
+  // intro verse
+  resultSection.innerHTML = `
+    <pre class="whitespace-pre-line">
+          # Welcome
+
+          ${getIntro()}
+
+          ---
+          Model: openai/gpt-4
+          Created at: https://chat.openai.com/
+          12/07/2023
+    <pre>`
+
 }
 
 
