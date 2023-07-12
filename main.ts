@@ -71,7 +71,7 @@ Make me the first verse of a rap song following the rules below:
 2. All words must be used, they must appear in the provided order.
 3. Mark each used word with an "*" before and an "*" after it. Mark each word only once.
 4. Do not mark words that are not part of the list.
-5. The song is about Bitcoin. Avoid the usage of the word "crypto".
+5. The song is about Bitcoin. The song is not about crypto.
 ${songStory.length < 3 ? "" : `
 Feel free to write about "${songStory}" even though this is not part of the wordlist.`}`
     }
@@ -96,6 +96,11 @@ Feel free to write about "${songStory}" even though this is not part of the word
           # ${songTitle}
 
           ${response?.message?.content}
+
+          ---
+          Model: ${currentModel}
+          Created at: ${window.location}
+          ${new Date().toLocaleDateString("pt-BR")}
         </pre>`
       printDebug()
     } catch (e) {
