@@ -1,9 +1,8 @@
-import {generateMnemonic, wordlists} from "bip39"
-import {sha256} from '@noble/hashes/sha256'
-import { Buffer } from 'buffer'
-import {getWindowAI, waitForWindowAI} from "window.ai"
-import {getIntro} from "./introVerses"
-
+import { generateMnemonic, wordlists } from "bip39"
+import { sha256 } from "@noble/hashes/sha256"
+import { Buffer } from "buffer"
+import { getWindowAI, waitForWindowAI } from "window.ai"
+import { getIntro } from "./introVerses"
 
 async function main() {
   // DOM elements
@@ -34,56 +33,61 @@ async function main() {
   // utility functions for the last word calc (copied from bitcoinjs lib)
   function lpad(str, padString, length) {
     while (str.length < length) {
-        str = padString + str;
+      str = padString + str
     }
-    return str;
+    return str
   }
   function binaryToByte(bin) {
-      return parseInt(bin, 2);
+    return parseInt(bin, 2)
   }
   function bytesToBinary(bytes) {
-    return bytes.map((x) => lpad(x.toString(2), '0', 8)).join('');
+    return bytes.map((x) => lpad(x.toString(2), "0", 8)).join("")
   }
   function deriveChecksumBits(entropyBuffer) {
-      const ENT = entropyBuffer.length * 8;
-      const CS = ENT / 32;
-      const hash = sha256(Uint8Array.from(entropyBuffer));
-      return bytesToBinary(Array.from(hash)).slice(0, CS);
+    const ENT = entropyBuffer.length * 8
+    const CS = ENT / 32
+    const hash = sha256(Uint8Array.from(entropyBuffer))
+    return bytesToBinary(Array.from(hash)).slice(0, CS)
   }
 
   // my function to create a random 12th word, based on https://github.com/BitcoinQnA/seedtool
   function get12thWord(elevenMnemonic) {
     // English bip39 wordlist
     const wordlist = wordlists.english
-    // convert words indices to 11 bit binary strings and append the 7 bits of the "last word" 
-    const elevenEntropyBits =  elevenMnemonic.map(word => {
-      const index = wordlist.indexOf(word)
-      return lpad(index.toString(2), '0', 11)
-    }).join('') 
+    // convert words indices to 11 bit binary strings and append the 7 bits of the "last word"
+    const elevenEntropyBits = elevenMnemonic
+      .map((word) => {
+        const index = wordlist.indexOf(word)
+        return lpad(index.toString(2), "0", 11)
+      })
+      .join("")
     // 7 random bits to concatenate with the checksum bits
-    const latWordEntropyBits = lpad(crypto.getRandomValues(new Uint8Array(1))[0].toString(2).slice(-7), '0', 7)
+    const latWordEntropyBits = lpad(
+      crypto.getRandomValues(new Uint8Array(1))[0].toString(2).slice(-7),
+      "0",
+      7,
+    )
     // full seed in bits
     const entropyBits = elevenEntropyBits + latWordEntropyBits
     // full seed in bytes
-    const entropyBytes = entropyBits.match(/(.{1,8})/g).map(binaryToByte);
+    const entropyBytes = entropyBits.match(/(.{1,8})/g).map(binaryToByte)
     // checksum bits
     const checkSumBits = deriveChecksumBits(Buffer.from(entropyBytes))
     // full last word bits
     const lastWordBits = latWordEntropyBits + checkSumBits
     // last word from the wordlist
-    const lastWord = wordlist[parseInt(lastWordBits, 2)];
+    const lastWord = wordlist[parseInt(lastWordBits, 2)]
 
     return lastWord
   }
-
 
   // Window AI
 
   // check if window.ai is supported
   try {
-    await waitForWindowAI();
+    await waitForWindowAI()
     promptForm.classList.remove("opacity-50")
-    promptForm.querySelectorAll("input, textarea, button").forEach(el => {
+    promptForm.querySelectorAll("input, textarea, button").forEach((el) => {
       el.removeAttribute("disabled")
       if (el.nodeName.toLowerCase() === "button") {
         el.classList.add("hover:bg-slate-500")
@@ -102,7 +106,6 @@ async function main() {
       errorSection.classList.toggle("hidden")
     }
   })
-
 
   // Debug
   debugButton.addEventListener("click", () => {
@@ -124,19 +127,18 @@ async function main() {
     debugSection.innerHTML = debugElement
   }
 
-
   const buildPrompt = () => {
     const formData = new FormData(promptForm)
     const songTitle = formData.get("title")
     const songStory = formData.get("story")
     const hasTitle = songTitle.length > 2
     const hasStory = songStory.length > 2
-    
+
     return [
       {
         role: "system",
         // FUN FACT:
-        // Google's bison (google/palm-2-chat-bison) have a problem with counting, 
+        // Google's bison (google/palm-2-chat-bison) have a problem with counting,
         // we will only use 11 words but we ask for 12
         // because when the prompt asks 11 Google returns only 10
         content: `
@@ -150,32 +152,33 @@ The Wordlist: ${wordlist}
 
 After completing the rap, conclude your message by listing the 11 chosen words from the Wordlist in the order that they were used in json format. This json should be in a section called METADATA in the end of the response.
 
-        `
+        `,
       },
       {
         role: "user",
         content: `
         ${hasTitle ? `title: ${songTitle}` : ""}
         ${hasStory ? `story: ${songStory}` : ""}
-        `.trim()
-      }
+        `.trim(),
+      },
     ]
   }
-
 
   // AI response
   const parseResponseMetadata = (response) => {
     const responseParts = response.split("METADATA")
-    
-    if (responseParts.length < 2) { return [response, ""] }
+
+    if (responseParts.length < 2) {
+      return [response, ""]
+    }
 
     responseMetadata = responseParts[1]
     try {
-      // We want to build the final seed from the words picked 
+      // We want to build the final seed from the words picked
       // by the AI, so we use the first 11 words and generate a new
       // checksum (12th word)
       const matches = responseMetadata.match(/\[[^\]]*\]/)
-      const elevenMnemonic = JSON.parse(matches[0]).slice(0,11)
+      const elevenMnemonic = JSON.parse(matches[0]).slice(0, 11)
       lastWord = get12thWord(elevenMnemonic)
       const seed = elevenMnemonic.concat(lastWord)
 
@@ -186,8 +189,8 @@ After completing the rap, conclude your message by listing the 11 chosen words f
       return [responseParts[0], ""]
     }
   }
-  
-  const generateRhymes = async e => {
+
+  const generateRhymes = async (e) => {
     e.preventDefault()
     const formData = new FormData(promptForm)
     const songTitle = formData.get("title")
@@ -199,14 +202,14 @@ After completing the rap, conclude your message by listing the 11 chosen words f
     resultSection.classList.remove("hidden")
 
     const ai = await getWindowAI()
-    const {generateText, getCurrentModel} = ai
+    const { generateText, getCurrentModel } = ai
     try {
       currentModel = await getCurrentModel()
       printDebug()
       responses = await generateText({ messages })
       printDebug()
     } catch (e) {
-      return resultSection.innerHTML = `<p>Window AI error.</p><dt>Details:</dt><dd>${e}</dd><p>Maybe try changing the model.</p>`
+      return (resultSection.innerHTML = `<p>Window AI error.</p><dt>Details:</dt><dd>${e}</dd><p>Maybe try changing the model.</p>`)
     }
     response = responses[0]
     printDebug()
@@ -214,10 +217,10 @@ After completing the rap, conclude your message by listing the 11 chosen words f
     printDebug()
 
     const markedText = rhymes.replace(
-      new RegExp('\\b(' + seed.join('|') + ')\\b', 'gi'),
-      '*$1*'
+      new RegExp("\\b(" + seed.join("|") + ")\\b", "gi"),
+      "*$1*",
     )
-    
+
     resultSection.innerHTML = `
       <pre class="whitespace-pre-line">
         # ${songTitle}
@@ -250,5 +253,4 @@ After completing the rap, conclude your message by listing the 11 chosen words f
   printDebug()
 }
 
-
-window.addEventListener('load', main)
+window.addEventListener("load", main)

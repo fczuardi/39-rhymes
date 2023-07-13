@@ -64,6 +64,6 @@ BIP39's wordlist addin' flavor to the audible.`,
 ]
 
 export function getIntro() {
-  const randomIndex = Math.floor(Math.random() * intros.length);
-  return intros[randomIndex];
+  const randomIndex = Math.floor(Math.random() * intros.length)
+  return intros[randomIndex]
 }
