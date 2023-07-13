@@ -5,6 +5,11 @@ AI powered orange pilled rapper bot
 
 This project is a **work in progress** [entry](https://bolt.fun/project/39rhymes) for the [AI4All hackathon](https://bolt.fun/tournaments/3/overview) (July 2023).
 
+## Deployments
+
+- stable: https://39-rhymes.vercel.app/
+- dev: https://39-rhymes.fczuardi.repl.co/
+
 ### Planning
 A rough roadmap with the planned tasks to complete the demo can be found in this [project's board](https://github.com/users/fczuardi/projects/1/views/1?layout=board).
 
@@ -14,7 +19,7 @@ A rough roadmap with the planned tasks to complete the demo can be found in this
   - MIT License
 - [x] bitconjs' [BIP39](https://github.com/bitcoinjs/bip39)
   - ICS License
-- [ ] [Window AI](https://github.com/alexanderatallah/window.ai)
+- [x] [Window AI](https://github.com/alexanderatallah/window.ai)
   - MIT License
 
 ## License

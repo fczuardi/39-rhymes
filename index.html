@@ -1,21 +1,22 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <title>39 Rhymes</title>
     <link href="./style.css" rel="stylesheet">
   </head>
   <body>
-    <h1>39 Rhymes</h1>
+    <h1>39 Rhymes <a href="https://github.com/fczuardi/39-rhymes"><img src="github-mark.png" width="20px" alt="github project" title="view source"/></a></h1>
     <div id="app" class="flex flex-col items-center ">
     <div class="w-3/5 mb-4">
       <p>Howdy! I am a rapper bot living the artificial pleb life, I can serve you some rhymes if you have the <a href="https://windowai.io/">Window AI</a> browser extension installed.</p>
       <p>I like sparkling some keywords from the <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39</a>'s <a href="https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt">English wordlist</a> on my compositions, I hope you don't mind.</p>
       <p>Do not use my verses as seed, it is not safe.</p>
     </div>
-        <form id="prompt-form" class="opacity-50 bg-gray-100 text-right p-4 rounded-lg">
+        <form id="prompt-form" class="opacity-50 bg-gray-100 text-right p-4 rounded-lg mb-8">
           <h4>Spit Some Rhymes</h4>
         <label class="block my-4">
           <span class="mr-2">Title of the track</span>
-          <input disabled type="text" name="title" maxlength="50" />
+          <input disabled type="text" name="title" required maxlength="50" />
         </label>
         <label class="block my-4">
           What is it about? (optional)
@@ -30,7 +31,7 @@
     </div>
     <div id="missing-ai-error" class="hidden p-4 m-4 rounded-lg bg-yellow-100"></div>
     <a class="underline text-gray-400" id="debug-button">debug data</a>
-    <div id="debug" class="hidden">
+    <div id="debug" class="hidden w-1/2">
       <span class="bg-gray-100 text-gray-300">initializing...</span>
     </div>
     <h4>About</h4>

@@ -1,4 +1,5 @@
-import {generateMnemonic} from "bip39"
+import {generateMnemonic, wordlists} from "bip39"
+import {sha256} from '@noble/hashes/sha256'
 import { Buffer } from 'buffer'
 import {getWindowAI, waitForWindowAI} from "window.ai"
 import {getIntro} from "./introVerses"
@@ -12,16 +13,68 @@ async function main() {
   const debugButton = document.getElementById("debug-button")
   const debugSection = document.getElementById("debug")
 
-  //globals
+  //global state
+  let wordlist = ""
   let currentModel = "unknown"
-  let message = {content: ""}
+  let messages = []
+  let responses = []
+  let response = ""
+  let responseMetadata = ""
+  let rhymes = ""
+  let lastWord = ""
+  let seed = ""
 
   // BIP39
 
   // use a nodejs Buffer polyfill in the browser
   // see: https://github.com/vitejs/vite/discussions/2785
   globalThis.Buffer = Buffer
-  let mnemonic = generateMnemonic()
+  const updateWordlist = () => generateMnemonic(256)
+
+  // utility functions for the last word calc (copied from bitcoinjs lib)
+  function lpad(str, padString, length) {
+    while (str.length < length) {
+        str = padString + str;
+    }
+    return str;
+  }
+  function binaryToByte(bin) {
+      return parseInt(bin, 2);
+  }
+  function bytesToBinary(bytes) {
+    return bytes.map((x) => lpad(x.toString(2), '0', 8)).join('');
+  }
+  function deriveChecksumBits(entropyBuffer) {
+      const ENT = entropyBuffer.length * 8;
+      const CS = ENT / 32;
+      const hash = sha256(Uint8Array.from(entropyBuffer));
+      return bytesToBinary(Array.from(hash)).slice(0, CS);
+  }
+
+  // my function to create a random 12th word, based on https://github.com/BitcoinQnA/seedtool
+  function get12thWord(elevenMnemonic) {
+    // English bip39 wordlist
+    const wordlist = wordlists.english
+    // convert words indices to 11 bit binary strings and append the 7 bits of the "last word" 
+    const elevenEntropyBits =  elevenMnemonic.map(word => {
+      const index = wordlist.indexOf(word)
+      return lpad(index.toString(2), '0', 11)
+    }).join('') 
+    // 7 random bits to concatenate with the checksum bits
+    const latWordEntropyBits = lpad(crypto.getRandomValues(new Uint8Array(1))[0].toString(2).slice(-7), '0', 7)
+    // full seed in bits
+    const entropyBits = elevenEntropyBits + latWordEntropyBits
+    // full seed in bytes
+    const entropyBytes = entropyBits.match(/(.{1,8})/g).map(binaryToByte);
+    // checksum bits
+    const checkSumBits = deriveChecksumBits(Buffer.from(entropyBytes))
+    // full last word bits
+    const lastWordBits = latWordEntropyBits + checkSumBits
+    // last word from the wordlist
+    const lastWord = wordlist[parseInt(lastWordBits, 2)];
+
+    return lastWord
+  }
 
 
   // Window AI
@@ -50,76 +103,136 @@ async function main() {
     }
   })
 
+
   // Debug
   debugButton.addEventListener("click", () => {
     debugSection.classList.toggle("hidden")
   })
   const printDebug = () => {
     const debugElement = `
-      <dt>mnemonic</dt>
-      <dd><pre>${mnemonic}</pre></dd>
-      <dt>hasWindowAi</dt>
-      <dd>${window.ai !== undefined}</dd>
-      <dt>currentModel</dt>
-      <dd>${currentModel}</dd>
-      <dt>Prompt</dt>
-      <dd><pre>${message.content}</pre></dd>
+    <pre class="whitespace-pre-line">
+      Wordlist: ${wordlist}
+      hasWindowAi: ${window.ai !== undefined}
+      currentModel: ${currentModel}
+      Request: ${JSON.stringify(messages, " ", 2)}
+      Response: ${JSON.stringify(response, " ", 2)}
+      Response Metadata: ${responseMetadata}
+      Seed: ${seed}
+    </pre>
     `
 
     debugSection.innerHTML = debugElement
   }
-  printDebug()
+
 
   const buildPrompt = () => {
-    const formData = new FormData(promptForm);
-    const songTitle = formData.get("title")
-    const songStory = formData.get("story")
-
-    return {
-      role: "user",
-      content: `
-Make me the first verse of a rap song following the rules below:
-
-1. The song is about Bitcoin. The song is not about crypto.
-2. It must use the words from this ordered list: [${mnemonic.split(" ").map(i => `"${i}"`).join(", ")}]. 
-3. All words must be used, they must appear in the provided order.
-4. Mark each used word from the list with an "*" before and an "*" after it. Mark each word only once. Only 12 word should be marked.
-${songStory.length < 3 ? "" : `
-Feel free to write about "${songStory}" even though this is not part of the wordlist.`}`
-    }
-  }
-
-  // AI response
-  promptForm.addEventListener("submit", async e => {
-    e.preventDefault()
-    resultSection.innerHTML = `<span class="text-indigo-600">thinking...</span>`
-    resultSection.classList.remove("hidden")
     const formData = new FormData(promptForm)
     const songTitle = formData.get("title")
-    message = buildPrompt()
+    const songStory = formData.get("story")
+    const hasTitle = songTitle.length > 2
+    const hasStory = songStory.length > 2
+    
+    return [
+      {
+        role: "system",
+        // FUN FACT:
+        // Google's bison (google/palm-2-chat-bison) have a problem with counting, 
+        // we will only use 11 words but we ask for 12
+        // because when the prompt asks 11 Google returns only 10
+        content: `
+You are a rap song composition bot. Your goal is to generate the a short rap using exactly 12 words from a given Wordlist. All choses words MUST be from the Wordlist.
+
+The user can provide a title and story to give you more context, words from the user input DO NOT count as Wordlist.
+
+Compose a rap that incorporates the user's title and story while utilizing the 12 chosen words. Make it catchy and full of energy, capturing the essence of the given context.
+
+The Wordlist: ${wordlist}
+
+After completing the rap, conclude your message by listing the 11 chosen words from the Wordlist in the order that they were used in json format. This json should be in a section called METADATA in the end of the response.
+
+        `
+      },
+      {
+        role: "user",
+        content: `
+        ${hasTitle ? `title: ${songTitle}` : ""}
+        ${hasStory ? `story: ${songStory}` : ""}
+        `.trim()
+      }
+    ]
+  }
+
+
+  // AI response
+  const parseResponseMetadata = (response) => {
+    const responseParts = response.split("METADATA")
+    
+    if (responseParts.length < 2) { return [response, ""] }
+
+    responseMetadata = responseParts[1]
+    try {
+      // We want to build the final seed from the words picked 
+      // by the AI, so we use the first 11 words and generate a new
+      // checksum (12th word)
+      const matches = responseMetadata.match(/\[[^\]]*\]/)
+      const elevenMnemonic = JSON.parse(matches[0]).slice(0,11)
+      lastWord = get12thWord(elevenMnemonic)
+      const seed = elevenMnemonic.concat(lastWord)
+
+      return [responseParts[0], seed]
+    } catch (e) {
+      console.error(e)
+
+      return [responseParts[0], ""]
+    }
+  }
+  
+  const generateRhymes = async e => {
+    e.preventDefault()
+    const formData = new FormData(promptForm)
+    const songTitle = formData.get("title")
+    wordlist = updateWordlist()
+    messages = buildPrompt()
+    printDebug()
+
+    resultSection.innerHTML = `<span class="text-indigo-600">thinking...</span>`
+    resultSection.classList.remove("hidden")
 
     const ai = await getWindowAI()
     const {generateText, getCurrentModel} = ai
     try {
       currentModel = await getCurrentModel()
-      const [response] = await generateText({ messages: [message] })
-      resultSection.innerHTML = `
-        <pre class="whitespace-pre-line">
-          # ${songTitle}
-
-          ${response?.message?.content}
-
-          ---
-          Model: ${currentModel}
-          Created at: ${window.location}
-          ${new Date().toLocaleDateString("pt-BR")}
-        </pre>`
+      printDebug()
+      responses = await generateText({ messages })
       printDebug()
     } catch (e) {
-      resultSection.innerHTML = `<p>Window AI error.</p><dt>Details:</dt><dd>${e}</dd><p>Maybe try changing the model.</p>`
+      return resultSection.innerHTML = `<p>Window AI error.</p><dt>Details:</dt><dd>${e}</dd><p>Maybe try changing the model.</p>`
     }
-    mnemonic = generateMnemonic()
-  })
+    response = responses[0]
+    printDebug()
+    let [rhymes, seed] = parseResponseMetadata(response.message?.content)
+    printDebug()
+
+    const markedText = rhymes.replace(
+      new RegExp('\\b(' + seed.join('|') + ')\\b', 'gi'),
+      '*$1*'
+    )
+    
+    resultSection.innerHTML = `
+      <pre class="whitespace-pre-line">
+        # ${songTitle}
+
+        ${markedText}
+        *${lastWord}*
+
+        ---
+        Model: ${currentModel}
+        Created at: ${window.location}
+        Seed:${seed.join(" ")}
+        ${new Date().toLocaleDateString("pt-BR")}
+      </pre>`
+  }
+  promptForm.addEventListener("submit", generateRhymes)
 
   // intro verse
   resultSection.innerHTML = `
@@ -134,6 +247,7 @@ Feel free to write about "${songStory}" even though this is not part of the word
           12/07/2023
     <pre>`
 
+  printDebug()
 }
 
 
